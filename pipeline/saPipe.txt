@@ -1,0 +1,19 @@
+apiVersion: v1
+imagePullSecrets:
+- name: pipeline-dockercfg-hwnrk
+kind: ServiceAccount
+metadata:
+  name: pipeline
+  namespace: wlmod
+  ownerReferences:
+  - apiVersion: operator.tekton.dev/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: TektonConfig
+    name: config
+    uid: 1077b1c7-6b19-4335-81c4-e46903e1bcd7
+  resourceVersion: "46515"
+  uid: 4c17a11f-bc8b-483a-894f-d6e76e906795
+secrets:
+- name: pipeline-dockercfg-hwnrk
+- name: basic-user-pass

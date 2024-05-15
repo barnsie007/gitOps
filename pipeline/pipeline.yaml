@@ -1,0 +1,127 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: maventest
+spec:
+  params:
+  - name: repo-url
+    type: string
+    description: The git repository URL to clone from.
+  - name: branch
+    type: string
+    description: git branch.
+  - name: user
+    type: string
+    description: git user.
+  - name: usermail
+    type: string
+    description: git user email.
+  - name: userpassword
+    type: string
+    description: git user password.
+  - name: deploymentfile
+    type: string
+    description: path to deployment file.
+  - name: bundle
+    type: string
+    description: The bundle git repository URL to clone from.
+  - name: branch-name
+    type: string
+    description: The git branch to clone.
+    default: main
+  - name: repo-context
+    type: string
+    description: The subfolder of the repo containing the dockerfile.
+    default: .
+  - name: repo-dockerfile
+    type: string
+    description: The name of the dockerfile to use.
+    default: Containerfile
+  - name: image-url
+    type: string
+    description: The image to push to the registry.
+  workspaces:
+  - name: build-workspace
+  - name: maven-settings
+  tasks:
+  - name: clone-app-repo
+    taskRef:
+      name: git-clone
+      kind: ClusterTask
+    params:
+    - name: url
+      value: $(params.repo-url)
+    - name: revision
+      value: $(params.branch-name)
+    - name: deleteExisting
+      value: "true"
+    workspaces:
+    - name: output
+      workspace: build-workspace
+  - name: maven
+    taskRef:
+      name: maventask
+      kind: Task
+    runAfter:
+    - clone-app-repo
+    params:
+    - name: IMAGE
+      value: $(params.image-url)
+    - name: DOCKERFILE
+      value: Containerfile
+    - name: CONTEXT
+      value: $(params.repo-context)
+    - name: TLSVERIFY
+      value: "false"
+    workspaces:
+    - name: source
+      workspace: build-workspace
+    - name: maven-settings
+      workspace: maven-settings
+  - name: build-application
+    taskRef:
+      name: buildah
+      kind: ClusterTask
+    runAfter:
+    - maven
+    params:
+    - name: IMAGE
+      value: $(params.image-url)
+    - name: DOCKERFILE
+      value: $(params.repo-dockerfile)
+    - name: CONTEXT
+      value: $(params.repo-context)
+    - name: TLSVERIFY
+      value: "false"
+    workspaces:
+    - name: source
+      workspace: build-workspace
+  - name: create-branch
+    taskRef:
+      name: john-clone
+      kind: Task
+    params:
+    - name: url
+      value: $(params.bundle)
+    - name: revision
+      value: $(params.branch-name)
+    - name: branch
+      value: $(params.branch)
+    - name: deploymentfile
+      value: $(params.deploymentfile)
+    - name: image
+      value: $(params.image-url)
+    - name: user
+      value: $(params.user)
+    - name: usermail
+      value: $(params.usermail)
+    - name: userpassword
+      value: $(params.userpassword)
+    - name: deleteExisting
+      value: "true"
+    workspaces:
+    - name: output
+      workspace: build-workspace
+    runAfter:
+    - build-application
+

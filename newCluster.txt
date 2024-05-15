@@ -1,0 +1,1 @@
+{"status":"success","cluster_name":"ta4","details":"cluster build initiated","request_id":"1-99480544"}
